@@ -64,9 +64,7 @@ send_to_zabbix() {
 
     log_msg "INFO" "Enviando status ao Zabbix: Nível $level — $description"
 
-    zabbix_sender -z "$ZBX_SERVER" -s "$ZBX_HOST" -k check.connectivity.level -o "$level" >/dev/null 2>&1
-
-    if [ $? -eq 0 ]; then
+    if zabbix_sender -z "$ZBX_SERVER" -s "$ZBX_HOST" -k check.connectivity.level -o "$level" >/dev/null 2>&1; then
         log_msg "INFO" "Dados enviados com sucesso ao Zabbix."
     else
         log_msg "ERROR" "Falha ao enviar dados ao Zabbix Server ($ZBX_SERVER)."
