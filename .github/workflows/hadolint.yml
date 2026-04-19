@@ -1,4 +1,4 @@
-name: Hadolint - Dockerfile
+name: Hadolint
 
 # =========================================================
 # WORKFLOW: Hadolint

@@ -1,4 +1,4 @@
-name: CI Build - Smoke Test
+name: CI Build
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   build-and-smoke-test:
-    name: Build e Smoke Test do Container
+    name: CI Build - Smoke Test
     runs-on: ubuntu-latest
 
     steps:
