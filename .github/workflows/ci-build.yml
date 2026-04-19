@@ -1,4 +1,4 @@
-name: CI Build
+name: CI Build - Smoke Test
 
 on:
   push:
