@@ -2,6 +2,11 @@ name: Publish Image
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
 
 permissions:
   contents: read
@@ -40,8 +45,16 @@ jobs:
         with:
           images: ${{ steps.image.outputs.name }}
           tags: |
-            type=raw,value=manual
             type=sha
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=ref,event=tag
+            type=raw,value=manual,enable=${{ github.event_name == 'workflow_dispatch' }}
+
+      - name: Exibir tags geradas
+        run: |
+          echo "Imagem: ${{ steps.image.outputs.name }}"
+          echo "Tags:"
+          echo "${{ steps.meta.outputs.tags }}"
 
       - name: Build e push da imagem
         uses: docker/build-push-action@v6
