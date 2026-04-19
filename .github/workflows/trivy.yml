@@ -9,7 +9,7 @@ name: Trivy Scan
 # 2) Build da imagem Docker do projeto + scan da imagem
 #
 # Estratégia atual:
-# - scan-repo: informativo
+# - scan-repo: bloqueante
 # - scan-image: bloqueante
 # =========================================================
 
@@ -45,7 +45,7 @@ jobs:
           format: table
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          exit-code: 0
+          exit-code: 1
 
   # =======================================================
   # JOB 2 - BUILD E SCAN DA IMAGEM
