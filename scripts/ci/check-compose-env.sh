@@ -16,6 +16,7 @@ fi
 
 echo "Lendo variáveis usadas em $COMPOSE_FILE..."
 mapfile -t compose_vars < <(
+    # shellcheck disable=SC2016
     grep -oE '\${[A-Za-z_][A-Za-z0-9_]*(:[-?][^}]*)?}' "$COMPOSE_FILE" \
     | sed -E 's/^\$\{([A-Za-z_][A-Za-z0-9_]*).*/\1/' \
     | sort -u
