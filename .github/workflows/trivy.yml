@@ -1,0 +1,103 @@
+name: Trivy Scan
+
+# =========================================================
+# WORKFLOW: Trivy Scan
+# ---------------------------------------------------------
+# Este workflow executa dois tipos de análise:
+#
+# 1) Scan do repositório (filesystem)
+# 2) Build da imagem Docker do projeto + scan da imagem
+#
+# Ele roda em:
+# - push na branch main
+# - pull request
+# - execução manual
+#
+# Neste momento, os scans estão em modo informativo:
+# - mostram os achados
+# - não quebram a esteira
+# =========================================================
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # =======================================================
+  # JOB 1 - SCAN DO REPOSITÓRIO
+  # -------------------------------------------------------
+  # Analisa o conteúdo do projeto:
+  # - scripts
+  # - Dockerfile
+  # - arquivos versionados
+  # - possíveis misconfigurations e vulnerabilidades
+  #
+  # Por enquanto:
+  # - exibe HIGH e CRITICAL
+  # - não falha o workflow
+  # =======================================================
+  scan-repo:
+    name: Trivy - Scan do Repositório
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      # Baixa o conteúdo do repositório para o runner
+      - name: Checkout do repositório
+        uses: actions/checkout@v5
+
+      # Executa o Trivy no filesystem do projeto
+      - name: Rodar Trivy no repositório
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: 0
+
+  # =======================================================
+  # JOB 2 - BUILD E SCAN DA IMAGEM
+  # -------------------------------------------------------
+  # Faz build da imagem Docker com base no Dockerfile do repo
+  # e depois executa o Trivy nessa imagem local.
+  #
+  # Isso é mais didático porque:
+  # - você analisa uma imagem sua
+  # - o resultado fica mais próximo de um cenário real de CI
+  #
+  # Por enquanto:
+  # - exibe HIGH e CRITICAL
+  # - não falha o workflow
+  # =======================================================
+  scan-image:
+    name: Trivy - Build e Scan da Imagem
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      # Baixa o conteúdo do repositório para o runner
+      - name: Checkout do repositório
+        uses: actions/checkout@v5
+
+      # Faz o build da imagem do projeto
+      # O nome "container-utils:ci" é apenas um nome local para o runner
+      - name: Build da imagem Docker
+        run: docker build -t container-utils:ci .
+
+      # Executa o Trivy na imagem gerada no step anterior
+      - name: Rodar Trivy na imagem local
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          image-ref: container-utils:ci
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: 0
