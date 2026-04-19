@@ -1,0 +1,42 @@
+name: Docker Compose
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: compose-validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-compose:
+    name: Docker Compose - Validar arquivo
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v5
+
+      - name: Preparar arquivo .env para validação
+        run: |
+          if [ -f .env.example ]; then
+            cp .env.example .env
+          else
+            echo ".env.example não encontrado"
+            exit 1
+          fi
+
+      - name: Exibir versão do Docker
+        run: docker version
+
+      - name: Exibir versão do Docker Compose
+        run: docker compose version
+
+      - name: Validar docker-compose.yml
+        run: docker compose config
