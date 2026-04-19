@@ -20,7 +20,7 @@ for origem in "${diretorios_origem[@]}"; do
         echo "Backup concluído para: $origem -> $arquivo_bkp"
     else
         echo "Erro ao realizar o backup de $origem"
-    fi
+    
 
     # Remover backups mais antigos que 7 dias dentro da pasta específica
     find "$destino_pasta" -type f -name "*.tar.gz" -mtime +7 -exec rm -f {} \;
