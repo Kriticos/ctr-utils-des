@@ -3,14 +3,27 @@ name: Trivy Scan
 # =========================================================
 # WORKFLOW: Trivy Scan
 # ---------------------------------------------------------
-# Este workflow executa:
+# Finalidade:
+# Este workflow executa verificações de segurança com Trivy
+# em dois alvos diferentes do projeto:
 #
-# 1) Scan do repositório (filesystem) com relatório JSON
-# 2) Build da imagem Docker + scan da imagem em SARIF
+# 1) O repositório (filesystem)
+# 2) A imagem Docker construída a partir do Dockerfile
 #
 # Estratégia atual:
-# - scan-repo: bloqueante + artifact JSON
-# - scan-image: bloqueante + upload SARIF para Security
+# - scan-repo:
+#   * bloqueante
+#   * gera relatório JSON como artifact
+#
+# - scan-image:
+#   * bloqueante
+#   * gera relatório SARIF
+#   * publica SARIF no GitHub Code Scanning
+#
+# Gatilhos:
+# - push na branch main
+# - pull request
+# - execução manual
 # =========================================================
 
 on:
@@ -19,6 +32,7 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Permissões globais do workflow
 permissions:
   contents: read
   security-events: write
@@ -27,16 +41,26 @@ jobs:
   # =======================================================
   # JOB 1 - SCAN DO REPOSITÓRIO
   # -------------------------------------------------------
-  # Mantém relatório JSON como artifact para evidência.
+  # Objetivo:
+  # Executar o Trivy no conteúdo versionado do repositório.
+  #
+  # Saída:
+  # - relatório JSON salvo como artifact
+  #
+  # Política:
+  # - falha o job se encontrar vulnerabilidades HIGH/CRITICAL
   # =======================================================
   scan-repo:
     name: Trivy - Scan do Repositório
     runs-on: ubuntu-latest
 
     steps:
+      # Faz checkout do conteúdo do repositório no runner
       - name: Checkout do repositório
         uses: actions/checkout@v5
 
+      # Executa o Trivy no filesystem do projeto
+      # O relatório é salvo em JSON para consulta posterior
       - name: Rodar Trivy no repositório
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
@@ -48,6 +72,7 @@ jobs:
           ignore-unfixed: true
           exit-code: 1
 
+      # Publica o relatório mesmo se o scan falhar
       - name: Upload do relatório do repositório
         if: always()
         uses: actions/upload-artifact@v4
@@ -58,19 +83,33 @@ jobs:
   # =======================================================
   # JOB 2 - BUILD E SCAN DA IMAGEM
   # -------------------------------------------------------
-  # Gera SARIF e envia o resultado para o GitHub Security.
+  # Objetivo:
+  # Fazer o build da imagem Docker do projeto e escanear a
+  # imagem resultante com Trivy.
+  #
+  # Saída:
+  # - relatório SARIF como artifact
+  # - envio do SARIF para GitHub Code Scanning
+  #
+  # Política:
+  # - falha o job se encontrar vulnerabilidades HIGH/CRITICAL
   # =======================================================
   scan-image:
     name: Trivy - Build e Scan da Imagem
     runs-on: ubuntu-latest
 
     steps:
+      # Faz checkout do repositório no runner
       - name: Checkout do repositório
         uses: actions/checkout@v5
 
+      # Constrói a imagem local usada no scan
+      # O nome abaixo é apenas uma tag temporária no runner
       - name: Build da imagem Docker
         run: docker build -t container-utils:ci .
 
+      # Executa o Trivy na imagem construída
+      # O resultado é salvo em formato SARIF
       - name: Rodar Trivy na imagem local
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
@@ -81,6 +120,7 @@ jobs:
           ignore-unfixed: true
           exit-code: 1
 
+      # Publica o arquivo SARIF como artifact
       - name: Upload do relatório SARIF como artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -88,6 +128,7 @@ jobs:
           name: trivy-image-report-sarif
           path: trivy-image-report.sarif
 
+      # Envia o SARIF para o GitHub Security / Code Scanning
       - name: Enviar SARIF para o GitHub Security
         if: always()
         uses: github/codeql-action/upload-sarif@v4
