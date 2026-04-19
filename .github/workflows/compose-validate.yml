@@ -32,6 +32,9 @@ jobs:
             exit 1
           fi
 
+      - name: Validar variáveis do compose contra .env.example
+        run: ./scripts/ci/check-compose-env.sh
+
       - name: Exibir versão do Docker
         run: docker version
 
