@@ -6,7 +6,7 @@ services:
     image: ${RELEASE}
     container_name: ${SRV_NAME}
     volumes:
-      - ${VOL_SCRIPTS
+      - ${VOL_SCRIPTS}
       - ${VOL_CRON}
       - ${VOL_DOCKER_SOCK}
       - ${VOL_DOCKER_BIN}
