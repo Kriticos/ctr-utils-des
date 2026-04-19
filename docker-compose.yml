@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ${RELEASE}
+    image: ${RELEAE}
     container_name: ${SRV_NAME}
     volumes:
       - ${VOL_SCRIPTS}
