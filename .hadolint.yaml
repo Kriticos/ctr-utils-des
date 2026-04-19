@@ -1,0 +1,3 @@
+# ignore a regra de pinagem de versão no apt-get install
+ignored:
+  - DL3008
