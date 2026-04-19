@@ -8,7 +8,7 @@ services:
     volumes:
       - ${VOL_SCRIPTS}
       - ${VOL_CRON}
-      - ${VOL_DOCKER_SOCK}
+      - ${VOL_DOCKE_SOCK}
       - ${VOL_DOCKER_BIN}
       - ${VOL_LOCALTIME}
     environment:
