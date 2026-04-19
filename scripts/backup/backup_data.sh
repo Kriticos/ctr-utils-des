@@ -2,7 +2,7 @@
 
 # Variáveis
 data_atual=$(date +"%Y-%m-%d_%H-%M-%S")
-diretorios_origem=("/bskp/docker" "/bskp/grafana" "/bskp/scripts" "/bskp/zabbix" "/bskp/README.md" "/bskp/mysql")  
+diretorios_origem=("/bskp/docker" "/bskp/grafana" "/bskp/scripts" "/bskp/zabbix" "/bskp/mysql")  
 diretorio_destino="/media/kriticos/bskp/bkp/bskp"
 
 # Criar backup para cada diretório

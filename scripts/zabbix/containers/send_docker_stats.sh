@@ -22,8 +22,8 @@ CONTAINERS=(
 # =======================
 convert_to_bytes() {
   local val unit
-  val=$(echo "$1" | sed 's/[^0-9\.]//g')
-  unit=$(echo "$1" | sed 's/[0-9.\ ]*//' | tr '[:upper:]' '[:lower:]')
+  val=$(printf '%s' "$1" | sed 's/[^0-9.]//g')
+  unit=$(printf '%s' "$1" | sed 's/[0-9. ]*//' | tr '[:upper:]' '[:lower:]')
 
   [ -z "$val" ] && echo 0 && return
 
