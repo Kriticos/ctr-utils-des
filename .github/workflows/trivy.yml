@@ -6,11 +6,15 @@ name: Trivy Scan
 # Este workflow executa dois tipos de análise:
 #
 # 1) Scan do repositório (filesystem)
-# 2) Build da imagem Docker do projeto + scan da imagem
+# 2) Build da imagem Docker + scan da imagem gerada
 #
 # Estratégia atual:
 # - scan-repo: bloqueante
 # - scan-image: bloqueante
+#
+# Além disso:
+# - gera relatórios JSON
+# - publica os relatórios como artifact
 # =========================================================
 
 on:
@@ -24,7 +28,8 @@ jobs:
   # JOB 1 - SCAN DO REPOSITÓRIO
   # -------------------------------------------------------
   # Analisa o conteúdo do projeto.
-  # Neste momento fica em modo informativo.
+  # Gera um relatório JSON e publica como artifact.
+  # Se houver HIGH ou CRITICAL, o job falha.
   # =======================================================
   scan-repo:
     name: Trivy - Scan do Repositório
@@ -34,27 +39,37 @@ jobs:
       contents: read
 
     steps:
+      # Faz checkout do repositório no runner
       - name: Checkout do repositório
         uses: actions/checkout@v5
 
+      # Executa o Trivy no filesystem do projeto
+      # e gera um relatório JSON
       - name: Rodar Trivy no repositório
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
           scan-type: fs
           scan-ref: .
-          format: table
+          format: json
+          output: trivy-repo-report.json
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: 1
 
+      # Publica o relatório como artifact mesmo se o scan falhar
+      - name: Upload do relatório do repositório
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-repo-report
+          path: trivy-repo-report.json
+
   # =======================================================
   # JOB 2 - BUILD E SCAN DA IMAGEM
   # -------------------------------------------------------
-  # Faz o build da imagem Docker do projeto e executa
-  # o Trivy na imagem local gerada.
-  #
-  # Agora este job é BLOQUEANTE:
-  # - se houver HIGH ou CRITICAL, falha a esteira
+  # Faz o build da imagem Docker do projeto, executa o Trivy
+  # na imagem gerada e publica o relatório como artifact.
+  # Se houver HIGH ou CRITICAL, o job falha.
   # =======================================================
   scan-image:
     name: Trivy - Build e Scan da Imagem
@@ -64,17 +79,30 @@ jobs:
       contents: read
 
     steps:
+      # Faz checkout do repositório no runner
       - name: Checkout do repositório
         uses: actions/checkout@v5
 
+      # Faz o build da imagem Docker local usada no scan
       - name: Build da imagem Docker
         run: docker build -t container-utils:ci .
 
+      # Executa o Trivy na imagem construída
+      # e gera um relatório JSON
       - name: Rodar Trivy na imagem local
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
           image-ref: container-utils:ci
-          format: table
+          format: json
+          output: trivy-image-report.json
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: 1
+
+      # Publica o relatório como artifact mesmo se o scan falhar
+      - name: Upload do relatório da imagem
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-image-report
+          path: trivy-image-report.json
