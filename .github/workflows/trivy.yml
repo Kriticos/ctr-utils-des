@@ -8,14 +8,9 @@ name: Trivy Scan
 # 1) Scan do repositório (filesystem)
 # 2) Build da imagem Docker do projeto + scan da imagem
 #
-# Ele roda em:
-# - push na branch main
-# - pull request
-# - execução manual
-#
-# Neste momento, os scans estão em modo informativo:
-# - mostram os achados
-# - não quebram a esteira
+# Estratégia atual:
+# - scan-repo: informativo
+# - scan-image: bloqueante
 # =========================================================
 
 on:
@@ -28,15 +23,8 @@ jobs:
   # =======================================================
   # JOB 1 - SCAN DO REPOSITÓRIO
   # -------------------------------------------------------
-  # Analisa o conteúdo do projeto:
-  # - scripts
-  # - Dockerfile
-  # - arquivos versionados
-  # - possíveis misconfigurations e vulnerabilidades
-  #
-  # Por enquanto:
-  # - exibe HIGH e CRITICAL
-  # - não falha o workflow
+  # Analisa o conteúdo do projeto.
+  # Neste momento fica em modo informativo.
   # =======================================================
   scan-repo:
     name: Trivy - Scan do Repositório
@@ -46,11 +34,9 @@ jobs:
       contents: read
 
     steps:
-      # Baixa o conteúdo do repositório para o runner
       - name: Checkout do repositório
         uses: actions/checkout@v5
 
-      # Executa o Trivy no filesystem do projeto
       - name: Rodar Trivy no repositório
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
@@ -64,16 +50,11 @@ jobs:
   # =======================================================
   # JOB 2 - BUILD E SCAN DA IMAGEM
   # -------------------------------------------------------
-  # Faz build da imagem Docker com base no Dockerfile do repo
-  # e depois executa o Trivy nessa imagem local.
+  # Faz o build da imagem Docker do projeto e executa
+  # o Trivy na imagem local gerada.
   #
-  # Isso é mais didático porque:
-  # - você analisa uma imagem sua
-  # - o resultado fica mais próximo de um cenário real de CI
-  #
-  # Por enquanto:
-  # - exibe HIGH e CRITICAL
-  # - não falha o workflow
+  # Agora este job é BLOQUEANTE:
+  # - se houver HIGH ou CRITICAL, falha a esteira
   # =======================================================
   scan-image:
     name: Trivy - Build e Scan da Imagem
@@ -83,16 +64,12 @@ jobs:
       contents: read
 
     steps:
-      # Baixa o conteúdo do repositório para o runner
       - name: Checkout do repositório
         uses: actions/checkout@v5
 
-      # Faz o build da imagem do projeto
-      # O nome "container-utils:ci" é apenas um nome local para o runner
       - name: Build da imagem Docker
         run: docker build -t container-utils:ci .
 
-      # Executa o Trivy na imagem gerada no step anterior
       - name: Rodar Trivy na imagem local
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
