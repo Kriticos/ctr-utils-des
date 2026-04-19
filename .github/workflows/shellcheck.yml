@@ -1,0 +1,56 @@
+name: ShellCheck
+
+# =========================================================
+# WORKFLOW: ShellCheck
+# ---------------------------------------------------------
+# Finalidade:
+# Validar scripts shell do repositório usando ShellCheck.
+#
+# Estratégia atual:
+# - workflow bloqueante
+# - se houver problemas encontrados pelo ShellCheck, o job falha
+#
+# Gatilhos:
+# - push na branch main
+# - pull request
+# - execução manual
+# =========================================================
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    name: ShellCheck - Validar scripts shell
+    runs-on: ubuntu-latest
+
+    steps:
+      # Faz checkout do repositório no runner
+      - name: Checkout do repositório
+        uses: actions/checkout@v5
+
+      # Executa ShellCheck em todos os arquivos .sh versionados no repositório
+      - name: Rodar ShellCheck nos scripts .sh
+        run: |
+          set -euo pipefail
+
+          files=$(find . -type f -name "*.sh" -not -path "./.git/*")
+
+          if [ -z "$files" ]; then
+            echo "Nenhum arquivo .sh encontrado no repositório."
+            exit 0
+          fi
+
+          echo "Arquivos encontrados:"
+          echo "$files"
+
+          docker run --rm \
+            -v "$PWD:/mnt" \
+            koalaman/shellcheck:stable \
+            -x $files
