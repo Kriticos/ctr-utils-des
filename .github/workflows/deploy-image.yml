@@ -16,7 +16,8 @@ jobs:
   deploy:
     name: Deploy / Rollback - Self Hosted
     runs-on: [self-hosted, Linux, X64]
-
+    environment: production
+    
     steps:
       - name: Checkout do repositório
         uses: actions/checkout@v5
