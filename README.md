@@ -1,31 +1,36 @@
-# ctr-utils
+ctr-utils
 
-Container utilitário em Docker para rotinas operacionais, monitoramento e tarefas agendadas com `cron`. O projeto reúne ferramentas de diagnóstico de rede, coleta de métricas, envio para Zabbix, inspeção de certificados e scripts auxiliares de backup, tudo empacotado em uma imagem baseada em Debian.
+Container utilitário em Docker para rotinas operacionais, monitoramento, coleta de métricas e execução de tarefas agendadas com cron.
 
-## Visão Geral
+O projeto foi estruturado para apoiar ambientes self-hosted com foco em automação operacional, integração com Zabbix, diagnósticos de rede, inspeção de certificados e rotinas auxiliares de backup.
 
-O objetivo deste repositório é disponibilizar um container de apoio para ambientes self-hosted, com foco em:
+Objetivo
 
-- monitoramento de conectividade e desempenho de internet;
-- envio de métricas para Zabbix com `zabbix_sender`;
-- coleta de estatísticas de containers Docker;
-- inspeção e descoberta de certificados TLS;
-- execução centralizada de scripts shell via `cron`;
-- apoio operacional com utilitários de rede, banco e sistema.
+Disponibilizar um container de apoio para operações de infraestrutura, centralizando scripts e utilitários técnicos em uma única imagem Docker.
 
-Na prática, o container sobe com `cron` em primeiro plano e executa scripts montados por volume em `/usr/local/bin/scripts`, permitindo manter a automação versionada no próprio repositório.
+Os principais cenários de uso são:
 
-## Principais Recursos
+monitoramento de conectividade e desempenho de internet;
+envio de métricas para Zabbix com zabbix_sender;
+coleta de estatísticas de containers Docker;
+inspeção e descoberta de certificados TLS;
+execução centralizada de scripts shell via cron;
+apoio operacional com utilitários de rede, banco e sistema.
+Arquitetura
 
-- Imagem Docker baseada em `debian:bookworm`
-- Ferramentas de rede e diagnóstico como `curl`, `wget`, `ping`, `mtr`, `dnsutils`, `net-tools` e `speedtest`
-- Cliente MySQL instalado para operações administrativas
-- Integração com Docker host via `/var/run/docker.sock`
-- Scripts de monitoramento para Zabbix
-- Rotinas agendadas por `cron`
-- Workflows de qualidade e segurança com GitHub Actions
+O container é baseado em Debian e executa o cron em foreground, mantendo a execução contínua das rotinas agendadas.
 
-## Estrutura do Projeto
+Os scripts são montados por volume em /usr/local/bin/scripts, permitindo versionamento direto no repositório e atualização operacional sem necessidade de alterar a estrutura da imagem a cada ajuste de script.
+
+Principais Recursos
+imagem Docker baseada em debian:bookworm;
+ferramentas de rede e diagnóstico como curl, wget, ping, mtr, dnsutils, net-tools e speedtest;
+cliente MySQL para operações administrativas;
+integração com Docker host via /var/run/docker.sock;
+execução de scripts agendados com cron;
+integração com Zabbix para coleta e envio de métricas;
+pipeline CI/CD implementada com GitHub Actions.
+Estrutura do Projeto
 
 ```text
 .
@@ -33,100 +38,67 @@ Na prática, o container sobe com `cron` em primeiro plano e executa scripts mon
 ├── docker-compose.yml
 ├── prepare.sh
 ├── cron/
-│   └── cron
+│ └── cron
 ├── scripts/
-│   ├── backup/
-│   ├── certificados/
-│   ├── logs/
-│   ├── nginx/
-│   ├── zabbix/
-│   │   ├── containers/
-│   │   └── speedtest/
-│   └── entrypoint.sh
+│ ├── backup/
+│ ├── certificados/
+│ ├── logs/
+│ ├── nginx/
+│ ├── zabbix/
+│ │ ├── containers/
+│ │ └── speedtest/
+│ └── entrypoint.sh
 └── .github/workflows/
 ```
 
-## Componentes
+Componentes
+Dockerfile
 
-### Container
+Responsável por instalar os pacotes base do ambiente, ferramentas auxiliares, speedtest da Ookla e zabbix_sender.
 
-O `Dockerfile` instala os pacotes essenciais do ambiente, adiciona o `speedtest` da Ookla e instala o `zabbix-sender`. A inicialização efetiva é feita por [`scripts/entrypoint.sh`](/bskp-des/ctr-utils-des/scripts/entrypoint.sh), que:
+Entrypoint
 
-- registra o aceite da licença do Speedtest na primeira execução;
-- garante a existência do log de cron;
-- inicia o `cron` em foreground para manter o container ativo.
+O arquivo scripts/entrypoint.sh é responsável por:
 
-### Agendamentos
+registrar o aceite da licença do Speedtest na primeira execução;
+garantir a existência do log do cron;
+iniciar o cron em foreground.
+Agendamentos
 
-O arquivo [`cron/cron`](/bskp-des/ctr-utils-des/cron/cron) agenda atualmente:
+O arquivo cron/cron define atualmente as seguintes rotinas:
 
-- `speedtest.sh` a cada 10 minutos;
-- `check_connectivity_level.sh` a cada 1 minuto;
-- `send_docker_stats.sh` a cada 1 minuto;
-- `clean_log.sh` diariamente às 23:00.
+speedtest.sh a cada 10 minutos;
+check_connectivity_level.sh a cada 1 minuto;
+send_docker_stats.sh a cada 1 minuto;
+clean_log.sh diariamente às 23:00.
+Scripts Relevantes
+scripts/zabbix/speedtest/speedtest.sh
+scripts/zabbix/speedtest/check_connectivity_level.sh
+scripts/zabbix/containers/send_docker_stats.sh
+scripts/nginx/check_cert.sh
+scripts/nginx/cert-days.sh
+scripts/nginx/discovery-cert.sh
+scripts/backup/backup_data.sh
+scripts/backup/backup_databases.sh
+scripts/logs/clean_log.sh
+Requisitos
+Docker
+Docker Compose ou docker compose
+acesso ao socket Docker do host
+rede Docker externa network-share
+Configuração
+Arquivo .env
 
-### Scripts incluídos
+O arquivo .env.example contém a configuração base do serviço.
 
-Alguns scripts relevantes do repositório:
-
-- [`scripts/zabbix/speedtest/speedtest.sh`](/bskp-des/ctr-utils-des/scripts/zabbix/speedtest/speedtest.sh): executa Speedtest e envia download, upload, latência, perda de pacotes e metadados para o Zabbix.
-- [`scripts/zabbix/speedtest/check_connectivity_level.sh`](/bskp-des/ctr-utils-des/scripts/zabbix/speedtest/check_connectivity_level.sh): classifica o nível de conectividade da internet com testes de gateway, DNS, resolução e HTTP.
-- [`scripts/zabbix/containers/send_docker_stats.sh`](/bskp-des/ctr-utils-des/scripts/zabbix/containers/send_docker_stats.sh): coleta `docker stats` e envia CPU, memória, rede, disco e PIDs de containers específicos.
-- [`scripts/nginx/check_cert.sh`](/bskp-des/ctr-utils-des/scripts/nginx/check_cert.sh): lista certificados presentes dentro do container `srv-nginx`.
-- [`scripts/nginx/cert-days.sh`](/bskp-des/ctr-utils-des/scripts/nginx/cert-days.sh): retorna dias restantes até a expiração de um certificado.
-- [`scripts/nginx/discovery-cert.sh`](/bskp-des/ctr-utils-des/scripts/nginx/discovery-cert.sh): apoio à descoberta de certificados para monitoramento.
-- [`scripts/backup/backup_data.sh`](/bskp-des/ctr-utils-des/scripts/backup/backup_data.sh): gera backups compactados de diretórios definidos no script.
-- [`scripts/backup/backup_databases.sh`](/bskp-des/ctr-utils-des/scripts/backup/backup_databases.sh): realiza dump de bases MySQL em containers Docker.
-- [`scripts/logs/clean_log.sh`](/bskp-des/ctr-utils-des/scripts/logs/clean_log.sh): remove logs `.log` de `/var/log`.
-
-## Requisitos
-
-- Docker
-- Docker Compose ou `docker compose`
-- Permissão para acessar o socket Docker do host
-- Rede Docker externa `network-share`
-
-## Como Usar
-
-### 1. Preparar o ambiente
-
-Copie o arquivo de exemplo:
-
-```bash
-cp .env.example .env
-```
-
-Depois ajuste os valores conforme o seu ambiente.
-
-Se quiser automatizar a criação das pastas base e da rede Docker externa, execute:
-
-```bash
-./prepare.sh
-```
-
-### 2. Subir o container
-
-```bash
-docker compose up -d --build
-```
-
-### 3. Verificar o funcionamento
-
-```bash
-docker compose ps
-docker compose logs -f ctr-utils
-```
-
-## Configuração
-
-O arquivo `.env.example` já traz a configuração base do container:
+Exemplo:
 
 ```env
 SRV_NAME=ctr-utils
 RELEASE=blackskulp/ctr-utils:latest
 NETWORK_NAME=network-share
 CONTAINER_IP=172.18.0.70
-SUBNET=172.18.0.16
+SUBNET=172.18.0.0/16
 VOL_SCRIPTS=./scripts:/usr/local/bin/scripts:ro
 VOL_CRON=./cron:/etc/cron.d:ro
 VOL_DOCKER_SOCK=/var/run/docker.sock:/var/run/docker.sock
@@ -134,85 +106,144 @@ VOL_DOCKER_BIN=/usr/bin/docker:/usr/bin/docker:ro
 VOL_LOCALTIME=/etc/localtime:/etc/localtime:ro
 ```
 
-### Variáveis usadas no `docker-compose`
+Variáveis adicionais
 
-Além das variáveis acima, o `docker-compose.yml` também referencia variáveis de ambiente para integrações externas:
+O docker-compose.yml também pode consumir variáveis adicionais para integrações externas, como:
 
-- `DB_TYPE`
-- `DB_HOST`
-- `DB_PORT`
-- `DB_NAME`
-- `DB_USER`
-- `DB_PASS`
-- `SMB_SHARE`
-- `SMB_REMOTE_FILE`
-- `SMB_USER`
-- `SMB_PASS`
+DB_TYPE
+DB_HOST
+DB_PORT
+DB_NAME
+DB_USER
+DB_PASS
+SMB_SHARE
+SMB_REMOTE_FILE
+SMB_USER
+SMB_PASS
 
-Se essas integrações forem necessárias no seu cenário, inclua essas chaves no `.env`.
+Quando aplicável, essas variáveis devem ser incluídas no arquivo .env.
 
-## Volumes e Montagens
-
-O serviço monta:
-
-- `./scripts` em `/usr/local/bin/scripts`
-- `./cron` em `/etc/cron.d`
-- `/var/run/docker.sock` para coleta de dados do Docker host
-- binário do Docker do host em `/usr/bin/docker`
-- `/etc/localtime` para manter o timezone alinhado ao host
-
-Isso permite editar scripts localmente e refletir as mudanças no container sem rebuild da imagem para cada ajuste de automação.
-
-## Rede
-
-O projeto espera uma rede Docker externa chamada `network-share`. O script [`prepare.sh`](/bskp-des/ctr-utils-des/prepare.sh) tenta criá-la automaticamente com subnet `172.18.0.0/16`.
-
-Se preferir criar manualmente:
+Uso
+Preparação do ambiente
 
 ```bash
-docker network create \
-  --driver=bridge \
-  --subnet=172.18.0.0/16 \
-  network-share
+cp .env.example .env
 ```
 
-## Qualidade e Segurança
+Ajuste os valores conforme o seu ambiente.
 
-O repositório inclui workflows em GitHub Actions para:
+Se desejar automatizar a preparação inicial:
 
-- build e smoke test da imagem Docker;
-- lint do `Dockerfile` com Hadolint;
-- validação de scripts shell com ShellCheck;
-- análise de vulnerabilidades com Trivy no repositório e na imagem.
+```bash
+./prepare.sh
+```
 
-Arquivos relevantes:
+Subida do container
 
-- [ci-build.yml](/bskp-des/ctr-utils-des/.github/workflows/ci-build.yml)
-- [hadolint.yml](/bskp-des/ctr-utils-des/.github/workflows/hadolint.yml)
-- [shellcheck.yml](/bskp-des/ctr-utils-des/.github/workflows/shellcheck.yml)
-- [trivy.yml](/bskp-des/ctr-utils-des/.github/workflows/trivy.yml)
+```bash
+docker compose up -d --build
+```
 
-## Observações Importantes
+Verificação
 
-- Alguns scripts possuem valores fixos de host, nomes de containers e IPs do Zabbix, como `172.18.0.3`, `srv-nginx` e nomes específicos de containers monitorados. Para reutilizar o projeto em outro ambiente, revise esses parâmetros.
-- O `.env.example` atual cobre a configuração principal do container, mas não documenta todas as variáveis opcionais consumidas por `docker-compose.yml` e por scripts de backup.
-- O campo `SUBNET` no `.env.example` está definido como `172.18.0.16`, enquanto o script de preparação cria a rede com `172.18.0.0/16`. Vale manter esses valores consistentes no seu ambiente.
-- O script `prepare.sh` tenta aplicar permissão com `chmod +x "$BASE_DIR/scripts/"*.sh`, mas boa parte dos scripts está em subpastas. Caso necessário, ajuste permissões recursivamente.
+```bash
+docker compose ps
+docker compose logs -f ctr-utils
+```
 
-## Desenvolvimento
+Volumes e Montagens
 
-Para rebuild local da imagem:
+O serviço utiliza as seguintes montagens principais:
+
+./scripts em /usr/local/bin/scripts
+./cron em /etc/cron.d
+/var/run/docker.sock para integração com Docker host
+/usr/bin/docker a partir do host
+/etc/localtime para alinhamento de timezone
+
+Essa estratégia permite manter os scripts desacoplados da imagem e facilita ajustes operacionais.
+
+Rede
+
+O projeto utiliza uma rede Docker externa chamada network-share.
+
+O script prepare.sh pode criar essa rede automaticamente com a subnet configurada.
+
+Criação manual:
+
+```bash
+docker network create
+--driver=bridge
+--subnet 172.18.0.0/16
+network-share
+```
+
+Pipeline CI/CD
+
+O repositório possui pipeline implementada em GitHub Actions para validação, publicação e entrega da imagem.
+
+Etapa de CI
+
+Os workflows de integração contínua cobrem:
+
+lint do Dockerfile com Hadolint;
+validação de scripts shell com ShellCheck;
+análise de segurança com Trivy;
+build e smoke test da imagem;
+validação estrutural do docker-compose.yml;
+smoke test do docker compose.
+
+Workflows relacionados:
+
+.github/workflows/hadolint.yml
+.github/workflows/shellcheck.yml
+.github/workflows/trivy.yml
+.github/workflows/ci-build.yml
+.github/workflows/compose-validate.yml
+.github/workflows/compose-smoke-test.yml
+Etapa de Publish
+
+A imagem é publicada no GitHub Container Registry (GHCR) com versionamento por tag.
+
+Exemplos de tags geradas:
+
+latest
+1.0.1
+1.0
+1
+sha-<commit>
+
+Workflow relacionado:
+
+.github/workflows/publish-image.yml
+Etapa de Deploy e Rollback
+
+O deploy é executado manualmente por workflow, utilizando self-hosted runner.
+
+O fluxo permite:
+
+deploy de uma versão específica;
+rollback para uma tag anterior da imagem;
+validação básica pós-deploy para confirmar que o container permaneceu em execução.
+
+Workflow relacionado:
+
+.github/workflows/deploy-image.yml
+Desenvolvimento
+Build local
 
 ```bash
 docker build -t ctr-utils:local .
 ```
 
-Para abrir um shell no container:
+Acesso ao container
 
 ```bash
 docker compose exec ctr-utils bash
 ```
 
-## Licença
-
-Este repositório não define uma licença explícita até o momento. Se o projeto for compartilhado publicamente, vale adicionar um arquivo `LICENSE`.
+Observações
+Alguns scripts possuem parâmetros fixos de ambiente, como IPs, nomes de containers e referências específicas de Zabbix.
+O .env.example deve permanecer consistente com as variáveis efetivamente usadas no docker-compose.yml.
+O valor de SUBNET deve permanecer alinhado com a rede criada no ambiente.
+O prepare.sh pode exigir ajustes caso seja necessário aplicar permissões em subpastas de scripts/.
