@@ -2,8 +2,23 @@ name: CI Build
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+    paths:
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.env.example'
+      - 'scripts/**'
+      - 'cron/**'
+      - 'prepare.sh'
   pull_request:
+    paths:
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.env.example'
+      - 'scripts/**'
+      - 'cron/**'
+      - 'prepare.sh'
   workflow_dispatch:
 
 permissions:
@@ -14,7 +29,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-smoke-test:
+  smoke-test:
     name: CI Build - Smoke Test
     runs-on: ubuntu-latest
 

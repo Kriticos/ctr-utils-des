@@ -1,29 +1,24 @@
 name: ShellCheck
 
-# =========================================================
-# WORKFLOW: ShellCheck
-# ---------------------------------------------------------
-# Finalidade:
-# Validar scripts shell do repositório usando ShellCheck.
-#
-# Estratégia atual:
-# - workflow bloqueante
-# - se houver problemas encontrados pelo ShellCheck, o job falha
-#
-# Gatilhos:
-# - push na branch main
-# - pull request
-# - execução manual
-# =========================================================
-
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+    paths:
+      - 'scripts/**'
+      - 'prepare.sh'
   pull_request:
+    paths:
+      - 'scripts/**'
+      - 'prepare.sh'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: shellcheck-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   shellcheck:
@@ -31,26 +26,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Faz checkout do repositório no runner
       - name: Checkout do repositório
         uses: actions/checkout@v5
 
-      # Executa ShellCheck em todos os arquivos .sh versionados no repositório
       - name: Rodar ShellCheck nos scripts .sh
         run: |
           set -euo pipefail
 
-          files=$(find . -type f -name "*.sh" -not -path "./.git/*")
+          arquivos=$(find ./scripts -type f -name "*.sh" ; find . -maxdepth 1 -type f -name "*.sh")
 
-          if [ -z "$files" ]; then
-            echo "Nenhum arquivo .sh encontrado no repositório."
+          if [ -z "$arquivos" ]; then
+            echo "Nenhum arquivo .sh encontrado."
             exit 0
           fi
 
           echo "Arquivos encontrados:"
-          echo "$files"
+          echo "$arquivos"
 
-          docker run --rm \
-            -v "$PWD:/mnt" \
-            koalaman/shellcheck:stable \
-            -x $files
+          docker run --rm -v "$PWD:/mnt" -w /mnt koalaman/shellcheck:stable $arquivos

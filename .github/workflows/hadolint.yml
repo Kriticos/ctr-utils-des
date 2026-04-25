@@ -1,33 +1,24 @@
 name: Hadolint
 
-# =========================================================
-# WORKFLOW: Hadolint
-# ---------------------------------------------------------
-# Finalidade:
-# Validar o Dockerfile do projeto com Hadolint.
-#
-# O Hadolint verifica boas práticas, padronização e problemas
-# comuns de Dockerfile.
-#
-# Estratégia atual:
-# - workflow bloqueante
-# - se o Dockerfile tiver achados relevantes, o job falha
-#
-# Gatilhos:
-# - push na branch main
-# - pull request
-# - execução manual
-# =========================================================
-
 on:
-  #workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+    paths:
+      - 'Dockerfile'
+      - '.hadolint.yaml'
   pull_request:
+    paths:
+      - 'Dockerfile'
+      - '.hadolint.yaml'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: hadolint-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   hadolint:
@@ -35,12 +26,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Faz checkout do repositório no runner
       - name: Checkout do repositório
         uses: actions/checkout@v5
 
-      # Executa o Hadolint no Dockerfile da raiz do projeto
       - name: Rodar Hadolint no Dockerfile
-        uses: hadolint/hadolint-action@v3.3.0
+        uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: Dockerfile

@@ -4,7 +4,19 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'docker-compose.yml'
+      - '.env.example'
+      - 'Dockerfile'
+      - 'scripts/**'
+      - 'cron/**'
   pull_request:
+    paths:
+      - 'docker-compose.yml'
+      - '.env.example'
+      - 'Dockerfile'
+      - 'scripts/**'
+      - 'cron/**'
   workflow_dispatch:
 
 permissions:
@@ -32,14 +44,14 @@ jobs:
             exit 1
           fi
 
+      - name: Criar rede Docker externa para teste
+        run: docker network create --subnet 172.18.0.0/16 network-share
+
       - name: Exibir versão do Docker
         run: docker version
 
       - name: Exibir versão do Docker Compose
         run: docker compose version
-
-      - name: Criar rede Docker externa para teste
-        run: docker network create --subnet 172.18.0.0/16 network-share
 
       - name: Subir stack para smoke test
         run: docker compose up -d --build
@@ -55,3 +67,7 @@ jobs:
       - name: Derrubar stack
         if: always()
         run: docker compose down -v
+
+      - name: Remover rede externa de teste
+        if: always()
+        run: docker network rm network-share || true

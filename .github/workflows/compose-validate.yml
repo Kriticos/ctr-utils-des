@@ -4,7 +4,13 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'docker-compose.yml'
+      - '.env.example'
   pull_request:
+    paths:
+      - 'docker-compose.yml'
+      - '.env.example'
   workflow_dispatch:
 
 permissions:
