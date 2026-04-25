@@ -1,0 +1,52 @@
+name: Deploy Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Tag da imagem no GHCR"
+        required: true
+        default: "latest"
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/ctr-utils-des
+
+jobs:
+  deploy:
+    name: Deploy - Self Hosted
+    runs-on: [self-hosted, Linux, X64]
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v5
+
+      - name: Login no GHCR
+        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+
+      - name: Preparar .env
+        run: |
+          cp .env.example .env
+          sed -i "s|^RELEASE=.*|RELEASE=${{ inputs.image_tag }}|" .env
+
+      - name: Garantir rede externa
+        run: |
+          docker network inspect network-share >/dev/null 2>&1 || \
+          docker network create --subnet 172.18.0.0/16 network-share
+
+      - name: Pull da imagem
+        run: docker pull "$IMAGE_NAME:${{ inputs.image_tag }}"
+
+      - name: Deploy com Docker Compose
+        run: docker compose up -d
+
+      - name: Status dos containers
+        if: always()
+        run: docker compose ps
+
+      - name: Logs em caso de falha
+        if: failure()
+        run: docker compose logs --no-color --tail=200
