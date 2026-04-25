@@ -54,4 +54,5 @@ RUN curl -fsSLO https://repo.zabbix.com/zabbix/7.2/stable/debian/pool/main/z/zab
 # -------------------------------------------------------------------
 # Log do cron em runtime
 # -------------------------------------------------------------------
+    
 CMD ["bash", "-c", "touch /var/log/cron.log && cron && tail -f /var/log/cron.log"]
