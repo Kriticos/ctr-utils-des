@@ -12,9 +12,6 @@ on:
 permissions:
   contents: read
 
-env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/ctr-utils-des
-
 jobs:
   deploy:
     name: Deploy - Self Hosted
@@ -23,6 +20,9 @@ jobs:
     steps:
       - name: Checkout do repositório
         uses: actions/checkout@v5
+
+      - name: Definir nome da imagem
+        run: echo "IMAGE_NAME=ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/ctr-utils-des" >> "$GITHUB_ENV"
 
       - name: Login no GHCR
         run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
