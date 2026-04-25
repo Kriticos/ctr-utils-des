@@ -1,10 +1,10 @@
-name: Deploy Image
+name: Deploy / Rollback Image
 
 on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: "Tag da imagem no GHCR"
+        description: "Tag da imagem para deploy ou rollback"
         required: true
         default: "latest"
         type: string
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy - Self Hosted
+    name: Deploy / Rollback - Self Hosted
     runs-on: [self-hosted, Linux, X64]
 
     steps:
@@ -36,6 +36,11 @@ jobs:
         run: |
           docker network inspect network-share >/dev/null 2>&1 || \
           docker network create --subnet 172.18.0.0/16 network-share
+
+      - name: Exibir versão alvo
+        run: |
+          echo "Imagem alvo: $IMAGE_NAME:${{ inputs.image_tag }}"
+          echo "Ação: deploy/rollback manual"
 
       - name: Pull da imagem
         run: docker pull "$IMAGE_NAME:${{ inputs.image_tag }}"
