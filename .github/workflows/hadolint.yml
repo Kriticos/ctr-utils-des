@@ -20,17 +20,10 @@ name: Hadolint
 # =========================================================
 
 on:
+  #workflow_dispatch:
   push:
-    branches:
-      - main
-    paths:
-      - 'Dockerfile'
-      - '.hadolint.yaml'
+    branches: [ "main" ]
   pull_request:
-    paths:
-      - 'Dockerfile'
-      - '.hadolint.yaml'
-  workflow_dispatch:
 
 permissions:
   contents: read
