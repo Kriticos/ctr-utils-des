@@ -43,6 +43,22 @@ jobs:
       - name: Deploy com Docker Compose
         run: docker compose up -d
 
+      - name: Validar se o container está em execução
+        run: |
+          CONTAINER_ID=$(docker compose ps -q)
+          if [ -z "$CONTAINER_ID" ]; then
+            echo "Nenhum container foi encontrado pelo docker compose."
+            exit 1
+          fi
+
+          STATUS=$(docker inspect -f '{{.State.Status}}' "$CONTAINER_ID")
+          echo "Status do container: $STATUS"
+
+          if [ "$STATUS" != "running" ]; then
+            echo "Container não está em execução."
+            exit 1
+          fi
+
       - name: Status dos containers
         if: always()
         run: docker compose ps
